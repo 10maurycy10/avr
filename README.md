@@ -12,6 +12,10 @@ You can find all MCUs by running ``avr-gcc --target-help``
 
 If the clock speed of the microcontroler is not 1MHz, specify ``F_CPU`` to the make.
 
+### Build system
+
+The makefiles in projects call the ``Makefile`` at the root of the repo. If you wish to build out of tree, it must be inlined.
+
 ## Flashing
 
 ``make flash``
