@@ -1,3 +1,6 @@
+// A random number generator using two 7 segment displays and 2 buttons
+// Can simulate a coin toss, d4, standard d6, d8, d12, d20, d100.
+
 #include <avr/io.h>
 #include <util/delay.h>
 

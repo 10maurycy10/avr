@@ -13,4 +13,8 @@ clean:
 	rm all.elf
 
 flash: all.elf
-	avrdude -c $(PROGRAMER) -p $(AVRDUDETARGET) -U flash:w:all.elf -e
+	avrdude -c $(PROGRAMER) -p $(TARGET) -U flash:w:all.elf -e
+
+flashkeep: all.elf
+	avrdude -c $(PROGRAMER) -p $(TARGET) -U flash:r:dump.hex
+	avrdude -c $(PROGRAMER) -p $(TARGET) -U flash:w:all.elf -U eeprom:w:dump.hex
