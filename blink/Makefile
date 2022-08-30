@@ -1,24 +1,41 @@
+# Settings for hardware and interface
 TARGET?=atmega328p
-SRC=blink.c
 PROGRAMER?=avrisp2
 F_CPU?=1000000
 
-.DEFAULT_GOAL := default
+# All object files in program
+OBJ=blink.c.o
 
+# Stuff no one worres about until it is a problem
+CFLAGS?=-Os -Wall -DF_CPU=$(F_CPU) -mmcu=$(TARGET)
+CC=avr-gcc
+SIZE=avr-size -C
+
+# Default target, build and print flash usage
+.DEFAULT_GOAL := default
 default: all.elf size
 
-all.elf : $(SRC)
-	avr-gcc -o all.elf $(SRC) -mmcu=$(TARGET) -Os -Wall -DF_CPU=$(F_CPU)
+# Generic rule for compiling C files
+%.c.o: %.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
+# Link all objects into final binary
+all.elf: $(OBJ)
+	$(CC) $(CFLAGS) -o all.elf $(OBJ)
+
+# Remove build artifacts
 clean:
-	rm all.elf
+	rm all.elf $(OBJ)
 
+# Display rom ussage
+size: all.elf
+	$(SIZE) --mcu=$(TARGET) all.elf
+
+# Shortcuts for flashing rom
 flash: all.elf
 	avrdude -c $(PROGRAMER) -p $(TARGET) -U flash:w:all.elf -e
-
-size: all.elf
-	avr-size --mcu=$(TARGET) all.elf -C
 
 flashkeep: all.elf
 	avrdude -c $(PROGRAMER) -p $(TARGET) -U flash:r:dump.hex
 	avrdude -c $(PROGRAMER) -p $(TARGET) -U flash:w:all.elf -U eeprom:w:dump.hex
+
