@@ -12,10 +12,11 @@ OBJ?=
 LIBS?=
 
 # Stuff no one worres about until it is a problem
-CFLAGS?=-Os -Wall -DF_CPU=$(F_CPU) -mmcu=$(TARGET)
+CFLAGS?=-Os -mcall-prologues -Wall -DF_CPU=$(F_CPU) -mmcu=$(TARGET)
 ASFLAGS?=--defsym F_CPU=$(C_CPU) -mmcu=$(TARGET)
 CC=avr-gcc
 AS=avr-as
+AVRDUDE=avrdude -c $(PROGRAMER) -p $(TARGET)
 SIZE=avr-size -C
 
 # Default target, build and print flash usage
@@ -44,9 +45,14 @@ size: all.elf
 
 # Shortcuts for flashing rom
 flash: all.elf
-	avrdude -c $(PROGRAMER) -p $(TARGET) -U flash:w:all.elf -e
+	$(AVRDUDE) -U flash:w:all.elf -e
 
 flashkeep: all.elf
-	avrdude -c $(PROGRAMER) -p $(TARGET) -U flash:r:dump.hex
-	avrdude -c $(PROGRAMER) -p $(TARGET) -U flash:w:all.elf -U eeprom:w:dump.hex
+	$(AVRDUDE) -U flash:r:dump.hex
+	$(AVRDUDE) -U flash:w:all.elf -U eeprom:w:dump.hex
 
+erase:
+	$(AVRDUDE) -e
+
+avrdude:
+	$(AVRDUDE) -t
