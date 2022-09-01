@@ -5,6 +5,7 @@
 TARGET?=atmega328p
 PROGRAMER?=avrisp2
 F_CPU?=1000000
+FLASHOP?=
 
 # All object files in program
 OBJ?=
@@ -45,11 +46,11 @@ size: all.elf
 
 # Shortcuts for flashing rom
 flash: all.elf
-	$(AVRDUDE) -U flash:w:all.elf -e
+	$(AVRDUDE) $(FLASHOP) -U flash:w:all.elf -e
 
 flashkeep: all.elf
-	$(AVRDUDE) -U flash:r:dump.hex
-	$(AVRDUDE) -U flash:w:all.elf -U eeprom:w:dump.hex
+	$(AVRDUDE)  -U flash:r:dump.hex
+	$(AVRDUDE) $(FLASHOP) -U flash:w:all.elf -U eeprom:w:dump.hex
 
 erase:
 	$(AVRDUDE) -e
