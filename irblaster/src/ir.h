@@ -29,15 +29,17 @@
 #define LED_PORT PORTB
 #define LED_BIT 0b00000110
 
-// For maximum compactness codes are stored as the parsed data.
-// This does mean that differnt tranmiting functions have to be used depending on the protocol
-// Hoever, only two main protocols exist: NEC and RC 5
-
 void initTimer0(); // Initialize the timer and set the LED's pin to output
 ISR (TIMER0_OVF_vect);
 
+// Set the freqency used by transmit_element, the argument should be one of the TIMER_CYCLES_* macros
+void set_freqency(uint16_t c); 
 // Transmit a pulse of ontime*10 us wait offtime*10 us.
-void transmit_element(int ontime, int offtime);
+void transmit_element(uint16_t ontime, uint16_t offtime);
+// Sets the timer to continualy generate a carrer, can be turned off by calling transmit_element(0,0)
+// the argument should be one of the TIMER_CYCLES_* constants.
+// This is intended for callubration, not data transmision
+void dead_carrier(uint16_t c); 
 
 // High level transmit functions
 void transmit_nec(uint8_t address, uint8_t command);
@@ -45,3 +47,5 @@ void transmit_necext(uint16_t address, uint16_t command);
 void transmit_rc5(uint8_t address, uint8_t command); // Also works for RC5x
 void transmit_samsung32(uint16_t address, uint16_t command);
 void transmit_sirc(uint16_t address, uint8_t command, uint8_t address_bits); // Varrients of SIRC
+void transmit_kaseikyo(uint32_t address, uint16_t command); // Kaseiyko, see ir.c for information on the address field
+void transmit_rc6(uint16_t address, uint8_t command); // RC-6

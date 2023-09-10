@@ -40,7 +40,7 @@ ISR (TIMER0_OVF_vect) {
 
 // TODO Use timer interupts here instead to get better acuracy and freqency independece.
 // Transmit a pulse of ontime*10 us wait offtime*10 us.
-void transmit_element(int ontime, int offtime) {
+void transmit_element(uint16_t ontime, uint16_t offtime) {
 	if (ontime) {
 		carrier = 1;
 		 _delay_loop_2(ontime * LOOPS_PER_10_US);
@@ -117,7 +117,7 @@ void transmit_rc5(uint8_t address, uint8_t command) {
 	// Togle bit, TODO handle this better?
 	send_bit(0);
 	// Transmit the address, MSB first
-	for (int i = 0; i < 6; i++) send_bit(GET_BIT(address, 5-i));
+	for (int i = 0; i < 5; i++) send_bit(GET_BIT(address, 4-i));
 	// Transmit the rest of the command, MSB first
 	for (int i = 0; i < 6; i++) send_bit(GET_BIT(command, 5-i));
 }
@@ -148,6 +148,7 @@ void transmit_samsung32(uint16_t address, uint16_t command) {
 
 // For SIRC, use 5 address bits, for SIRC15, use 7, and for SIRC 20 use 13
 void transmit_sirc(uint16_t address, uint8_t command, uint8_t address_bits) { 
+	cycles = TIMER_CYCLES_40;
 	// SIRC sends the LSB first
 	void send_bit(uint32_t value) {
 		if (value) {
@@ -164,6 +165,93 @@ void transmit_sirc(uint16_t address, uint8_t command, uint8_t address_bits) {
 	send_data(command, 7);
 	send_data(address, address_bits);
 	_delay_ms(10); // Because SIRC recivers have to wait to detemine which protocol is being recived, insert a delay to avoid confusing it.
+}
+
+void transmit_rc6(uint16_t address, uint8_t command) { 
+	cycles = TIMER_CYCLES_36;
+	void send_bit(uint8_t value) {
+		if (value) {
+			transmit_element(44, 0);
+			transmit_element(0, 44);
+		} else {
+			transmit_element(0, 44);
+			transmit_element(44, 0);
+		}
+	}
+	// Start bit
+	transmit_element(266, 89);
+	send_bit(1); 
+	// Mode bits
+	send_bit(0);
+	send_bit(0);
+	send_bit(0);
+	// Togle bit
+	send_bit(0);
+	// Address, MSB first
+	for (int i = 0; i < 8; i++) send_bit(GET_BIT(address, 7-i));
+	// Data, MSB first
+	for (int i = 0; i < 8; i++) send_bit(GET_BIT(command, 7-i));
+	// Pause
+	transmit_element(0, 266);
+}
+
+// https://github.com/Arduino-IRremote/Arduino-IRremote/blob/master/src/ir_Kaseikyo.hpp 
+// The vendor ID, ID and Genre are packed into a signle address argument for compatibility with .ir files 
+// LSB first.
+// Format:
+//		Start bit
+// 	16	Vendor ID
+//	4	Parity: XOR of very 4 bits of the vendor id
+//	4	Genre1
+//	4	Genre2
+//	10 	Command
+//	2 	Id
+//	8 	Parity: Bytewize XOR of eveyr byte after the vendor ID
+//
+// Address arguemnt layout (MSB first):
+//	2	Id
+//	16	Vendor id
+//	4	Genre1
+//	4	Genre2
+//
+void transmit_kaseikyo(uint32_t address, uint16_t command) {
+	cycles = TIMER_CYCLES_38;
+	void send_bit(uint32_t bit) {
+		if (bit) transmit_element(42, 126);
+		if (!bit) transmit_element(42, 42);
+	}
+	// Transmision buffer, the message has to be stored to compute parity
+	uint8_t buff[6];
+
+	// Split the address into id, vendor and genre infrmation
+	uint8_t id = (address >> 24) & 3;
+	uint16_t vendor_id = (address >> 8) & 0xffff;
+	uint8_t genre1 = (address >> 4) & 0xf;
+	uint8_t genre2 = address & 0xf;
+	// Add the vendor id to the buffer
+	buff[0] = (uint8_t)(vendor_id & 0xff);
+	buff[1] = (uint8_t)(vendor_id >> 8);
+	// Compute the vendor parity, 4 bits
+	uint8_t vendor_parity = buff[0] ^ buff[1];
+	vendor_parity = (vendor_parity & 0xf) ^ (vendor_parity >> 4);
+	// Add the party and the genre information
+	buff[2] = (vendor_parity & 0xf) | (genre1 << 4);
+	// Wirte the rest of the genre and the command
+	buff[3] = (genre2 & 0xf) | ((uint8_t)(command & 0xf) << 4);
+	buff[4] = (id << 6) | (uint8_t)(command >> 4);
+	// Wirte the final parity byte
+	buff[5] = buff[2] ^ buff[3] ^ buff[4];
+	
+	// Start bit
+	transmit_element(338, 169);
+	// Everything else
+	for (int i = 0; i < sizeof(buff)/sizeof(uint8_t); i++) {
+		for (int e = 0; e < 8; e++) {
+			send_bit(GET_BIT(buff[i], e));
+		}
+	}
+	// Stop bit
+	transmit_element(42, 0);
 }
 
 void dead_carrier(uint16_t c) {
