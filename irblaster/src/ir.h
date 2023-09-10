@@ -17,12 +17,12 @@
 #include <avr/interrupt.h>
 
 // Timing calibration procedure:
-// 	First adjust the TIMER_CYCLES_36 until the carrier is at 36 KHz, and TIMER_CYCLES_38 for 38 Khz
-//	Then callibrate the LOOPS_PER_10_US, starting at 20 and going down to set the timing of the trasnmited data.
-
-#define TIMER_CYCLES_36 84 // The timer flips the pin, so the freqency should be twice the target freqence
-#define TIMER_CYCLES_38 82 // The timer flips the pin, so the freqency should be twice the target freqence
-#define LOOPS_PER_10_US 14
+//	use dead_carrier to set the cycles count to one of the constants, adust the constant untill the freqency is correct
+// 	Finaly adjust loops per 10 us for the right burst timeing
+#define TIMER_CYCLES_36 80 // 36 KHz
+#define TIMER_CYCLES_38 75 // 38 Khz
+#define TIMER_CYCLES_40 68 // 40 Khz
+#define LOOPS_PER_10_US 12
 
 // The connection point of the IR LED or driver.
 #define LED_DDR DDRB
@@ -44,3 +44,4 @@ void transmit_nec(uint8_t address, uint8_t command);
 void transmit_necext(uint16_t address, uint16_t command);
 void transmit_rc5(uint8_t address, uint8_t command); // Also works for RC5x
 void transmit_samsung32(uint16_t address, uint16_t command);
+void transmit_sirc(uint16_t address, uint8_t command, uint8_t address_bits); // Varrients of SIRC

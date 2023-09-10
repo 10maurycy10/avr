@@ -36,8 +36,9 @@ ISR (TIMER0_OVF_vect) {
 // https://www.mikrocontroller.net/articles/IRMP_-_english
 
 // LSB = 0
-#define GET_BIT(value, bit) ((value)<<(bit) & 1)
+#define GET_BIT(value, bit) ((value) & (1<<(bit)))
 
+// TODO Use timer interupts here instead to get better acuracy and freqency independece.
 // Transmit a pulse of ontime*10 us wait offtime*10 us.
 void transmit_element(int ontime, int offtime) {
 	if (ontime) {
@@ -50,7 +51,7 @@ void transmit_element(int ontime, int offtime) {
 	}
 }
 
-void nec_send_bit(uint8_t value) {
+void nec_send_bit(uint16_t value) {
 	if (value) {
 		transmit_element(56, 56);
 	} else {
@@ -123,7 +124,7 @@ void transmit_rc5(uint8_t address, uint8_t command) {
 
 void transmit_samsung32(uint16_t address, uint16_t command) {
 	cycles = TIMER_CYCLES_38;
-	void send_bit(uint8_t value) {
+	void send_bit(uint16_t value) {
 		if (value) {
 			transmit_element(55, 165);
 		} else {
@@ -143,4 +144,29 @@ void transmit_samsung32(uint16_t address, uint16_t command) {
 	// End bit
 	transmit_element(55, 0);
 
+}
+
+// For SIRC, use 5 address bits, for SIRC15, use 7, and for SIRC 20 use 13
+void transmit_sirc(uint16_t address, uint8_t command, uint8_t address_bits) { 
+	// SIRC sends the LSB first
+	void send_bit(uint32_t value) {
+		if (value) {
+			transmit_element(120, 60);
+		} else {
+			transmit_element(60, 60);
+		}
+	}
+	void send_data(uint16_t value, uint8_t bits) {
+		for (int i = 0; i < bits; i++) send_bit(GET_BIT(value, i));
+	}
+	// Start bit
+	transmit_element(240, 60);
+	send_data(command, 7);
+	send_data(address, address_bits);
+	_delay_ms(10); // Because SIRC recivers have to wait to detemine which protocol is being recived, insert a delay to avoid confusing it.
+}
+
+void dead_carrier(uint16_t c) {
+	carrier = 1;
+	cycles = c;
 }

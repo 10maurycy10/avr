@@ -46,6 +46,12 @@ for line in file.readlines():
 			elif proto == "Samsung32":
 				counter = counter + 1
 				print("\t{.sam32 = { .type = CODE_SAM32, .address = " + ir_hex_to_c(addr, 2) + ", .command = " + ir_hex_to_c(command, 2) + " }},")
+			elif proto == "SIRC":
+				print("\t{.sirc = { .type = CODE_SIRC, .address = " + ir_hex_to_c(addr, 2) + ", .command = " + ir_hex_to_c(command, 1) + " }},")
+			elif proto == "SIRC15":
+				print("\t{.sirc = { .type = CODE_SIRC15, .address = " + ir_hex_to_c(addr, 2) + ", .command = " + ir_hex_to_c(command, 1) + " }},")
+			elif proto == "SIRC20":
+				print("\t{.sirc = { .type = CODE_SIRC20, .address = " + ir_hex_to_c(addr, 2) + ", .command = " + ir_hex_to_c(command, 1) + " }},")
 			else:
 				print("// Unkown type: ", proto)
 		# Reset data
